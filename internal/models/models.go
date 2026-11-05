@@ -16,7 +16,7 @@ type Product struct {
 	ID           int       `json:"id"`
 	Name         string    `json:"name"`
 	Description  string    `json:"description,omitempty"`
-	Price        int       `json:"price"`
+	Price        Money     `json:"price"`
 	Quantity     int       `json:"quantity"`
 	CategoryID   *int      `json:"category_id,omitempty"`
 	CategoryName string    `json:"category_name,omitempty"`
@@ -39,7 +39,7 @@ type Profile struct {
 type Transaction struct {
 	ID        int       `json:"id"`
 	UserID    string    `json:"user_id"`
-	Total     int       `json:"total"`
+	Total     Money     `json:"total"`
 	Status    string    `json:"status"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
@@ -50,7 +50,7 @@ type TransactionItem struct {
 	TransactionID int
 	ProductID     int
 	Quantity      int
-	Price         int
+	Price         Money `json:"price"`
 	CreatedAt     time.Time
 }
 

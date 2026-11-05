@@ -23,14 +23,14 @@ type Handler struct {
 }
 
 type createProductRequest struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Price       int    `json:"price"`
-	Quantity    int    `json:"quantity"`
-	CategoryID  *int   `json:"category_id"`
-	Image       string `json:"image"`
-	Unit        string `json:"unit"`
-	Status      string `json:"status"`
+	Name        string       `json:"name"`
+	Description string       `json:"description"`
+	Price       models.Money `json:"price"`
+	Quantity    int          `json:"quantity"`
+	CategoryID  *int         `json:"category_id"`
+	Image       string       `json:"image"`
+	Unit        string       `json:"unit"`
+	Status      string       `json:"status"`
 }
 
 type createCategoryRequest struct {
@@ -233,7 +233,7 @@ func (h *Handler) createProduct(w http.ResponseWriter, r *http.Request) {
 	request.Name = strings.TrimSpace(request.Name)
 	request.Unit = strings.TrimSpace(request.Unit)
 	request.Status = strings.TrimSpace(request.Status)
-	if request.Name == "" || request.Unit == "" || request.Status == "" || request.Price < 0 || request.Quantity < 0 {
+	if request.Name == "" || request.Unit == "" || request.Status == "" || request.Price.IsNegative() || request.Quantity < 0 {
 		http.Error(w, "name, unit, dan status wajib diisi; price dan quantity tidak boleh negatif", http.StatusBadRequest)
 		return
 	}
