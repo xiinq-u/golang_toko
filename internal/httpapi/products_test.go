@@ -45,3 +45,15 @@ func TestTransactionsRequiresAdminToken(t *testing.T) {
 		t.Fatalf("expected status %d, got %d", http.StatusUnauthorized, response.Code)
 	}
 }
+
+func TestCreateCategoryRequiresAdminToken(t *testing.T) {
+	handler := New(nil, "expected-token", "http://localhost:3000")
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/categories", strings.NewReader(`{"name":"Bahan Pokok"}`))
+	response := httptest.NewRecorder()
+
+	handler.ServeHTTP(response, request)
+
+	if response.Code != http.StatusUnauthorized {
+		t.Fatalf("expected status %d, got %d", http.StatusUnauthorized, response.Code)
+	}
+}

@@ -33,6 +33,10 @@ type createProductRequest struct {
 	Status      string `json:"status"`
 }
 
+type createCategoryRequest struct {
+	Name string `json:"name"`
+}
+
 func New(dbConn *sql.DB, adminToken, allowedOrigin string) http.Handler {
 	return &Handler{db: dbConn, adminToken: adminToken, allowedOrigin: allowedOrigin}
 }
@@ -64,6 +68,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				"GET /api/v1/products",
 				"POST /api/v1/products",
 				"GET /api/v1/categories",
+				"POST /api/v1/categories (admin)",
 				"GET /api/v1/hero-sliders",
 				"GET /api/v1/transactions (admin)",
 			},
@@ -88,11 +93,18 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			methodNotAllowed(w, "GET, POST, OPTIONS")
 		}
 	case "/api/v1/categories":
-		if r.Method != http.MethodGet {
-			methodNotAllowed(w, "GET, OPTIONS")
-			return
+		switch r.Method {
+		case http.MethodGet:
+			h.listCategories(w)
+		case http.MethodPost:
+			if !h.authorized(r) {
+				http.Error(w, "unauthorized", http.StatusUnauthorized)
+				return
+			}
+			h.createCategory(w, r)
+		default:
+			methodNotAllowed(w, "GET, POST, OPTIONS")
 		}
-		h.listCategories(w)
 	case "/api/v1/hero-sliders":
 		if r.Method != http.MethodGet {
 			methodNotAllowed(w, "GET, OPTIONS")
@@ -147,6 +159,40 @@ func (h *Handler) listCategories(w http.ResponseWriter) {
 		return
 	}
 	writeJSON(w, http.StatusOK, categories)
+}
+
+func (h *Handler) createCategory(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+
+	var request createCategoryRequest
+	if err := decoder.Decode(&request); err != nil {
+		http.Error(w, "body JSON tidak valid", http.StatusBadRequest)
+		return
+	}
+	if err := decoder.Decode(&struct{}{}); !errors.Is(err, io.EOF) {
+		http.Error(w, "body harus berisi satu objek JSON", http.StatusBadRequest)
+		return
+	}
+
+	request.Name = strings.TrimSpace(request.Name)
+	if request.Name == "" {
+		http.Error(w, "name wajib diisi", http.StatusBadRequest)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	id, err := repositories.CreateCategory(ctx, h.db, request.Name)
+	if err != nil {
+		log.Printf("gagal membuat kategori: %v", err)
+		http.Error(w, "gagal menyimpan kategori", http.StatusInternalServerError)
+		return
+	}
+
+	writeJSON(w, http.StatusCreated, map[string]any{"id": id, "name": request.Name})
 }
 
 func (h *Handler) listHeroSliders(w http.ResponseWriter) {
