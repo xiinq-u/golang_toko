@@ -9,7 +9,7 @@ import (
 
 func ListHeroSliders(dbConn *sql.DB) ([]models.HeroSlider, error) {
 	query := `
-		SELECT id, title, subtitle, image_url, link, is_active, created_at, updated_at
+		SELECT id, title, description, image, created_at, updated_at
 		FROM hero_sliders
 		ORDER BY id
 	`
@@ -23,8 +23,15 @@ func ListHeroSliders(dbConn *sql.DB) ([]models.HeroSlider, error) {
 	items := []models.HeroSlider{}
 	for rows.Next() {
 		var hs models.HeroSlider
-		if err := rows.Scan(&hs.ID, &hs.Title, &hs.Subtitle, &hs.ImageURL, &hs.Link, &hs.IsActive, &hs.CreatedAt, &hs.UpdatedAt); err != nil {
+		var description, image sql.NullString
+		if err := rows.Scan(&hs.ID, &hs.Title, &description, &image, &hs.CreatedAt, &hs.UpdatedAt); err != nil {
 			return nil, fmt.Errorf("gagal scan hero_slider: %w", err)
+		}
+		if description.Valid {
+			hs.Description = description.String
+		}
+		if image.Valid {
+			hs.Image = image.String
 		}
 		items = append(items, hs)
 	}

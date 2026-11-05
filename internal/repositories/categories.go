@@ -9,7 +9,7 @@ import (
 
 func ListCategories(dbConn *sql.DB) ([]models.Category, error) {
 	query := `
-		SELECT id, name, slug, created_at, updated_at
+		SELECT id, name, description, image, status, created_at, updated_at
 		FROM categories
 		ORDER BY id
 	`
@@ -23,8 +23,18 @@ func ListCategories(dbConn *sql.DB) ([]models.Category, error) {
 	items := []models.Category{}
 	for rows.Next() {
 		var c models.Category
-		if err := rows.Scan(&c.ID, &c.Name, &c.Slug, &c.CreatedAt, &c.UpdatedAt); err != nil {
+		var description, image, status sql.NullString
+		if err := rows.Scan(&c.ID, &c.Name, &description, &image, &status, &c.CreatedAt, &c.UpdatedAt); err != nil {
 			return nil, fmt.Errorf("gagal scan category: %w", err)
+		}
+		if description.Valid {
+			c.Description = description.String
+		}
+		if image.Valid {
+			c.Image = image.String
+		}
+		if status.Valid {
+			c.Status = status.String
 		}
 		items = append(items, c)
 	}

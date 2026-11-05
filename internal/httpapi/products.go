@@ -49,24 +49,74 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
-	if r.URL.Path != "/products" {
-		http.NotFound(w, r)
-		return
-	}
 
-	switch r.Method {
-	case http.MethodGet:
-		h.listProducts(w, r)
-	case http.MethodPost:
+	switch r.URL.Path {
+	case "/":
+		if r.Method != http.MethodGet {
+			methodNotAllowed(w, "GET, OPTIONS")
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{
+			"service": "golangtoko-api",
+			"version": "v1",
+			"routes": []string{
+				"GET /health",
+				"GET /api/v1/products",
+				"POST /api/v1/products",
+				"GET /api/v1/categories",
+				"GET /api/v1/hero-sliders",
+				"GET /api/v1/transactions (admin)",
+			},
+		})
+	case "/health":
+		if r.Method != http.MethodGet {
+			methodNotAllowed(w, "GET, OPTIONS")
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+	case "/products", "/api/v1/products":
+		switch r.Method {
+		case http.MethodGet:
+			h.listProducts(w, r)
+		case http.MethodPost:
+			if !h.authorized(r) {
+				http.Error(w, "unauthorized", http.StatusUnauthorized)
+				return
+			}
+			h.createProduct(w, r)
+		default:
+			methodNotAllowed(w, "GET, POST, OPTIONS")
+		}
+	case "/api/v1/categories":
+		if r.Method != http.MethodGet {
+			methodNotAllowed(w, "GET, OPTIONS")
+			return
+		}
+		h.listCategories(w)
+	case "/api/v1/hero-sliders":
+		if r.Method != http.MethodGet {
+			methodNotAllowed(w, "GET, OPTIONS")
+			return
+		}
+		h.listHeroSliders(w)
+	case "/api/v1/transactions":
+		if r.Method != http.MethodGet {
+			methodNotAllowed(w, "GET, OPTIONS")
+			return
+		}
 		if !h.authorized(r) {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
-		h.createProduct(w, r)
+		h.listTransactions(w)
 	default:
-		w.Header().Set("Allow", "GET, POST, OPTIONS")
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		http.NotFound(w, r)
 	}
+}
+
+func methodNotAllowed(w http.ResponseWriter, allowed string) {
+	w.Header().Set("Allow", allowed)
+	http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 }
 
 func (h *Handler) authorized(r *http.Request) bool {
@@ -87,6 +137,36 @@ func (h *Handler) listProducts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, products)
+}
+
+func (h *Handler) listCategories(w http.ResponseWriter) {
+	categories, err := repositories.ListCategories(h.db)
+	if err != nil {
+		log.Printf("gagal mengambil kategori: %v", err)
+		http.Error(w, "gagal mengambil kategori", http.StatusInternalServerError)
+		return
+	}
+	writeJSON(w, http.StatusOK, categories)
+}
+
+func (h *Handler) listHeroSliders(w http.ResponseWriter) {
+	heroSliders, err := repositories.ListHeroSliders(h.db)
+	if err != nil {
+		log.Printf("gagal mengambil hero slider: %v", err)
+		http.Error(w, "gagal mengambil hero slider", http.StatusInternalServerError)
+		return
+	}
+	writeJSON(w, http.StatusOK, heroSliders)
+}
+
+func (h *Handler) listTransactions(w http.ResponseWriter) {
+	transactions, err := repositories.ListTransactions(h.db)
+	if err != nil {
+		log.Printf("gagal mengambil transaksi: %v", err)
+		http.Error(w, "gagal mengambil transaksi", http.StatusInternalServerError)
+		return
+	}
+	writeJSON(w, http.StatusOK, transactions)
 }
 
 func (h *Handler) createProduct(w http.ResponseWriter, r *http.Request) {

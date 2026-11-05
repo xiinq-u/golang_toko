@@ -3,11 +3,13 @@ package models
 import "time"
 
 type Category struct {
-	ID        int
-	Name      string
-	Slug      string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID          int       `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description,omitempty"`
+	Image       string    `json:"image,omitempty"`
+	Status      string    `json:"status,omitempty"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 type Product struct {
@@ -35,12 +37,12 @@ type Profile struct {
 }
 
 type Transaction struct {
-	ID        int
-	UserID    string
-	Total     int
-	Status    string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID        int       `json:"id"`
+	UserID    string    `json:"user_id"`
+	Total     int       `json:"total"`
+	Status    string    `json:"status"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type TransactionItem struct {
@@ -53,12 +55,10 @@ type TransactionItem struct {
 }
 
 type HeroSlider struct {
-	ID        int
-	Title     string
-	Subtitle  string
-	ImageURL  string
-	Link      string
-	IsActive  bool
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID          int       `json:"id"`
+	Title       string    `json:"title"`
+	Description string    `json:"description,omitempty"`
+	Image       string    `json:"image,omitempty"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
